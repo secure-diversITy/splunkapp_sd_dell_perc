@@ -1,0 +1,61 @@
+<form>
+  <label>Disk</label>
+  <fieldset submitButton="false">
+    <input type="dropdown" token="hostname" searchWhenChanged="true">
+      <label>Hostname</label>
+      <fieldForLabel>host</fieldForLabel>
+      <fieldForValue>host</fieldForValue>
+      <choice value="*">All</choice>
+      <default>*</default>
+      <search>
+        <query>sourcetype="dell:perc:vdisk" host=* |dedup host</query>
+        <earliest>-3h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <change>
+        <unset token="pdisk_table"></unset>
+        <set token="vdisk_table">true</set>
+      </change>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Virtual Disk information</title>
+      <table>
+        <title>(click on a row to display physical information of a host)</title>
+        <search>
+          <query>sourcetype="dell:perc:vdisk" host=$hostname$              | stats values(disk_cache_policy) as disk_cache_policy values(Media) as disk_media values(Size) as size values(read_policy) as read_policy values(write_policy) as write_policy values(stripe_element_size) as stripe_element_size values(raid_level) as raid_level values(Name) as raid_name values(State) as raid_state values(Status) as raid_status by host device_name</query>
+          <earliest>-3h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <drilldown>
+          <set token="pdisk_table">true</set>
+          <set token="pdisk_filter">$row.host$</set>
+        </drilldown>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="count">15</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$pdisk_table$">
+      <title>Physical disk information for: $pdisk_filter$</title>
+      <table>
+        <search>
+          <query>sourcetype="dell:perc:pdisk" host="$pdisk_filter$" 
+            | stats values(manufacture_date) as manufacture_date values(device_write_cache) as device_write_cache values(Capacity) as disk_capacity values(available_raid_disk_space) as available_raid_disk_space values(capable_speed) as capable_speed values(negotiated_speed) as negotiated_speed last(State) as disk_state values(Status) as disk_status by host serial              | eval speed_ok=if(negotiated_speed != capable_speed, "No", "Yes")</query>
+          <earliest>-3h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="count">15</option>
+      </table>
+    </panel>
+  </row>
+</form>

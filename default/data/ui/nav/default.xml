@@ -1,0 +1,6 @@
+<nav search_view="search" color="#ABABAF">
+  <view name="general" default='true' />
+  <view name="disk" />
+  <view name="alerts" />
+  <view name="search" />
+</nav>

@@ -1,0 +1,61 @@
+<dashboard stylesheet="dashboard.css">
+  <label>Summary</label>
+  <row>
+    <panel>
+      <table>
+        <title>Controller Firmware</title>
+        <search>
+          <query>host="lxx416*" index="main" sourcetype="dell:perc:*" OMA.OMA.Controllers.DCStorageObject.FirmwareVer="*" OMA.OMA.Controllers.DCStorageObject.Name="*" |dedup host | table host OMA.OMA.Controllers.DCStorageObject.Name  OMA.OMA.Controllers.DCStorageObject.FirmwareVer |rename host AS Server OMA.OMA.Controllers.DCStorageObject.Name AS "Controller Product Name" OMA.OMA.Controllers.DCStorageObject.FirmwareVer AS "Controller Firmware version"</query>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+       <title>Last triggered Alerts (click on a row to show details)</title>
+       <search>
+        <query>
+        index=_audit action=alert_fired ss_app="sd_dell_perc" 
+          | eval ttl=expiration-now() 
+          | search ttl>0 
+          | convert ctime(trigger_time) 
+          | table trigger_time ss_name severity sid
+          | rename ss_name as Alert trigger_time as Trigger_time severity as Severity
+        </query>
+      	</search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="count">10</option>
+      	<fields>Alert Trigger_time Severity</fields>
+        <drilldown>
+          <set token="alert_click">true</set>
+          <set token="alert_sid">$row.sid$</set>
+          <set token="alert_time">$row.Trigger_time$</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>  
+  <row>
+    <panel depends="$alert_click$">
+      <table>
+       <title>Alert details on: $alert_time$</title>
+       <search><query>
+        |loadjob $alert_sid$
+         </query></search>
+      <option name="wrap">true</option>
+      <option name="rowNumbers">false</option>
+      <option name="dataOverlayMode">none</option>
+      <option name="drilldown">none</option>
+      <option name="count">15</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>
